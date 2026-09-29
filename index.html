@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Urna Eletrônica Fictícia</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .urna {
+            display: flex;
+            background-color: #dcdcdc;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid #a0a0a0;
+        }
+
+        /* TELA DA URNA */
+        .tela {
+            width: 440px;
+            height: 360px;
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            margin-right: 30px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .conteudo-candidato {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .info-candidato {
+            font-size: 18px;
+            text-transform: uppercase;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+
+        /* FOTO DO CANDIDATO */
+        .container-foto {
+            width: 110px;
+            height: 140px;
+            border: 2px solid #000;
+            display: none;
+            background-color: #f0f0f0;
+        }
+
+        .container-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .numeros-digitados { display: flex; gap: 10px; margin-top: 15px; }
+        .digito {
+            width: 40px; height: 50px; border: 2px solid #000;
+            font-size: 35px; display: flex; justify-content: center; align-items: center;
+        }
+        .instrucoes { border-top: 2px solid #000; padding-top: 10px; font-size: 13px; }
+        .fim { font-size: 80px; text-align: center; margin-top: 90px; }
+
+        /* TECLADO DA URNA */
+        .teclado {
+            width: 250px; background-color: #2b2b2b; padding: 20px;
+            border-radius: 5px; display: flex; flex-direction: column; align-items: center;
+        }
+        .linhas-numeros {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #111; color: white; border: none; width: 50px; height: 40px;
+            border-radius: 5px; font-size: 20px; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-zero { grid-column: 2; }
+        
+        .acoes { display: flex; gap: 10px; width: 100%; }
+        .btn-acao {
+            flex: 1; height: 50px; border: none; border-radius: 5px; font-size: 13px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); color: black;
+        }
+        .branco { background-color: #ffffff; }
+        .corrige { background-color: #ff5722; }
+        .confirma { background-color: #4caf50; height: 60px; margin-top: -10px; }
+    </style>
+</head>
+<body>
+
+    <div class="urna">
+        <div class="tela" id="tela">
+            <div>
+                <h3 style="margin: 0;">SEU VOTO PARA:</h3>
+                <h2 style="margin: 5px 0;">TESTADOR DE CÓDIGO DO COLÉGIO</h2>
+                
+                <div class="conteudo-candidato">
+                    <div>
+                        <div class="numeros-digitados" id="display-numeros">
+                            <div class="digito" id="digito-1"></div>
+                            <div class="digito" id="digito-2"></div>
+                        </div>
+                        <div class="info-candidato" id="info-candidato"></div>
+                    </div>
+                    <div class="container-foto" id="container-foto">
+                        <img id="foto-candidato" src="" alt="Foto Candidato">
+                    </div>
+                </div>
+            </div>
+
+            <div class="instrucoes">
+                Aperte a tecla:<br>
+                <b>VERDE</b> para CONFIRMAR este voto<br>
+                <b>LARANJA</b> para REINICIAR este voto
+            </div>
+        </div>
+
+        <div class="teclado">
+            <div class="linhas-numeros">
+                <button class="btn" onclick="clicouNumero('1')">1</button>
+                <button class="btn" onclick="clicouNumero('2')">2</button>
+                <button class="btn" onclick="clicouNumero('3')">3</button>
+                <button class="btn" onclick="clicouNumero('4')">4</button>
+                <button class="btn" onclick="clicouNumero('5')">5</button>
+                <button class="btn" onclick="clicouNumero('6')">6</button>
+                <button class="btn" onclick="clicouNumero('7')">7</button>
+                <button class="btn" onclick="clicouNumero('8')">8</button>
+                <button class="btn" onclick="clicouNumero('9')">9</button>
+                <button class="btn btn-zero" onclick="clicouNumero('0')">0</button>
+            </div>
+            <div class="acoes">
+                <button class="btn-acao branco" onclick="votarBranco()">Branco</button>
+                <button class="btn-acao corrige" onclick="corrigir()">Corrige</button>
+                <button class="btn-acao confirma" onclick="confirmar()">Confirma</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="som-fim" src="https://www.tse.jus.br/urna-eletronica/audiourna.mp3"></audio>
+
+    <script>
+        let numeroDigitado = "";
+        let votoEmBranco = false;
+
+        // PARTIDOS TOTALMENTE FICTÍCIOS BASEADOS EM CONCEITOS TÉCNICOS
+        const candidatos = {
+            "88": {
+                nome: "Ada Lovelace",
+                partido: "PA (Partido do Algoritmo)",
+                foto: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Ada_Lovelace_portrait.jpg"
+            },
+            "99": {
+                nome: "Alan Turing",
+                partido: "FC (Frente da Computação)",
+                foto: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Alan_Turing_Aged_16.jpg"
+            },
+            "77": {
+                nome: "Grace Hopper",
+                partido: "MDC (Movimento dos Devs Compiladores)",
+                foto: "https://upload.wikimedia.org/wikipedia/commons/a/a0/Commodore_Grace_M._Hopper%2C_USN_%28covered%29.jpg"
+            }
+
+           
+        };
+
+        function inicializarApuracao() {
+            let apuracaoSalva = JSON.parse(localStorage.getItem('apuracaoUrna')) || {};
+            
+            for (let num in candidatos) {
+                if (!(num in apuracaoSalva)) {
+                    apuracaoSalva[num] = 0;
+                }
+            }
+            if (!("brancos" in apuracaoSalva)) apuracaoSalva["brancos"] = 0;
+            if (!("nulos" in apuracaoSalva)) apuracaoSalva["nulos"] = 0;
+
+            localStorage.setItem('apuracaoUrna', JSON.stringify(apuracaoSalva));
+        }
+        
+        inicializarApuracao();
+
+        function atualizarTela() {
+            const digito1 = document.getElementById('digito-1');
+            const digito2 = document.getElementById('digito-2');
+            const info = document.getElementById('info-candidato');
+            const containerFoto = document.getElementById('container-foto');
+            const imgFoto = document.getElementById('foto-candidato');
+
+            digito1.innerText = numeroDigitado[0] || "";
+            digito2.innerText = numeroDigitado[1] || "";
+
+            if (numeroDigitado.length === 2) {
+                const cand = candidatos[numeroDigitado];
+                if (cand) {
+                    info.innerHTML = `<b>Nome:</b> ${cand.nome}<br><b>Partido:</b> ${cand.partido}`;
+                    imgFoto.src = cand.foto;
+                    containerFoto.style.display = 'block';
+                } else {
+                    info.innerHTML = "<br><span style='font-size:24px'>VOTO NULO</span>";
+                    containerFoto.style.display = 'none';
+                }
+            } else {
+                info.innerHTML = "";
+                containerFoto.style.display = 'none';
+            }
+        }
+
+        function clicouNumero(n) {
+            if (numeroDigitado.length < 2 && !votoEmBranco) {
+                numeroDigitado += n;
+                atualizarTela();
+            }
+        }
+
+        function corrigir() {
+            numeroDigitado = "";
+            votoEmBranco = false;
+            document.getElementById('display-numeros').style.display = 'flex';
+            document.getElementById('container-foto').style.display = 'none';
+            document.getElementById('info-candidato').innerHTML = "";
+            atualizarTela();
+        }
+
+        function votarBranco() {
+            if (numeroDigitado === "") {
+                votoEmBranco = true;
+                document.getElementById('display-numeros').style.display = 'none';
+                document.getElementById('container-foto').style.display = 'none';
+                document.getElementById('info-candidato').innerHTML = "<br><span style='font-size:24px'>VOTO EM BRANCO</span>";
+            } else {
+                alert("Para votar em branco, não digite números. Aperte CORRIGE e depois BRANCO.");
+            }
+        }
+
+        function confirmar() {
+            let resultados = JSON.parse(localStorage.getItem('apuracaoUrna'));
+
+            if (votoEmBranco) {
+                resultados.brancos += 1;
+            } else if (numeroDigitado.length === 2) {
+                if (candidatos[numeroDigitado]) {
+                    resultados[numeroDigitado] += 1;
+                } else {
+                    resultados.nulos += 1;
+                }
+            } else {
+                alert("Digite o número do candidato ou vote em Branco.");
+                return;
+            }
+
+            localStorage.setItem('apuracaoUrna', JSON.stringify(resultados));
+
+            document.getElementById('som-fim').play().catch(() => {});
+            document.getElementById('tela').innerHTML = '<div class="fim">FIM</div>';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        }
+
+        function mostrarApuracao() {
+            const resultados = JSON.parse(localStorage.getItem('apuracaoUrna'));
+            console.log("=== RESULTADO DA ELEIÇÃO ===");
+            for (let num in candidatos) {
+                console.log(`${candidatos[num].nome} (${num}): ${resultados[num] || 0} votos`);
+            }
+            console.log(`Brancos: ${resultados.brancos} votos`);
+            console.log(`Nulos: ${resultados.nulos} votos`);
+            console.log("============================");
+        }
+
+        function zerarUrna() {
+            if (confirm("Deseja zerar a urna?")) {
+                localStorage.removeItem('apuracaoUrna');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
